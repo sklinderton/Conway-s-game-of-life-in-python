@@ -1,7 +1,7 @@
 # 🧬 Juego de la Vida de Conway
 
 > **Tarea 1 — LEAD University**  
-> **Curso:** Programación Paralela  
+> **Curso:** Computación Paralela y distribuida
 > **Profesor:** Johansell Villalobos Cubillo  
 > **Estudiante:** Jason Jesús Barrantes Sánchez  
 > **Fecha:** Mayo 2026
