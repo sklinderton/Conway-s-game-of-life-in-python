@@ -1,12 +1,13 @@
 # 🧬 Juego de la Vida de Conway
 
-> Tarea 1 — LEAD University  
-> Curso: Programación Paralela  
-> Profesor: Johansell Villalobos Cubillo
-> Alumno: Jason Jesús Barrantes Sánchez
+> **Tarea 1 — LEAD University**  
+> **Curso:** Programación Paralela  
+> **Profesor:** Johansell Villalobos Cubillo  
+> **Estudiante:** Jason Jesús Barrantes Sánchez  
+> **Fecha:** Mayo 2026
 
 Implementación en Python del autómata celular de Conway, con:
-- **Numba** (`@njit`) para acelerar el núcleo de cálculo.
+- **Numba** (`@njit`) para acelerar el núcleo de cálculo (~400x más rápido que Python puro).
 - **Matplotlib Animation** para animaciones GIF de patrones clásicos.
 - **Análisis empírico** de complejidad temporal con gráficas log-log.
 
@@ -24,8 +25,8 @@ conway_juego_vida/
 │   ├── juego_vida.py       ← clase GameOfLife + función Numba
 │   ├── visualizacion.py    ← animaciones con FuncAnimation
 │   └── rendimiento.py      ← medición de tiempos y gráficas
-├── animaciones/            ← (generado) GIFs de los patrones
-└── figuras/                ← (generado) gráficas de rendimiento
+├── animaciones/            ← GIFs de los patrones clásicos
+└── figuras/                ← gráficas de rendimiento
 ```
 
 ---
@@ -43,7 +44,7 @@ conway_juego_vida/
 ## Instalación con `uv`
 
 ```bash
-# 1. Clonar o descargar el proyecto
+# 1. Entrar a la carpeta del proyecto
 cd conway_juego_vida
 
 # 2. Crear el entorno virtual e instalar todas las dependencias
@@ -87,22 +88,6 @@ uv run python experimentos.py --sin-grandes
 
 ---
 
-## Salidas Esperadas
-
-Después de ejecutar `experimentos.py`, encontrarás:
-
-| Archivo | Descripción |
-|---|---|
-| `animaciones/glider.gif` | Planeador clásico en grilla 32×32 |
-| `animaciones/blinker.gif` | Oscilador período-2 en grilla 20×20 |
-| `animaciones/toad.gif` | Sapo (oscilador) en grilla 20×20 |
-| `animaciones/aleatorio.gif` | Estado aleatorio 64×64 |
-| `animaciones/aleatorio_128.gif` | Estado aleatorio 128×128 |
-| `figuras/rendimiento_lineal.png` | Tiempo vs celdas (escala lineal) |
-| `figuras/rendimiento_loglog.png` | Tiempo vs celdas (escala log-log) |
-
----
-
 ## Uso Programático
 
 ```python
@@ -126,11 +111,83 @@ for _ in range(4):
 
 ---
 
+## Patrones Clásicos Animados
+
+### 🛸 Glider (Planeador)
+Se desplaza diagonalmente. Completa un ciclo cada 4 generaciones.
+
+```
+. X .
+. . X
+X X X
+```
+
+![Glider](animaciones/glider.gif)
+
+---
+
+### 💡 Blinker (Parpadeante)
+Oscilador de período 2: alterna entre línea horizontal y vertical.
+
+```
+Gen 0: X X X      Gen 1:  . X .
+                           . X .
+                           . X .
+```
+
+![Blinker](animaciones/blinker.gif)
+
+---
+
+### 🐸 Toad (Sapo)
+Oscilador de período 2 con dos triángulos alternantes.
+
+```
+Gen 0:  . X X X    Gen 1:  . . X .
+        X X X .             X . . X
+                             X . . X
+                             . X . .
+```
+
+![Toad](animaciones/toad.gif)
+
+---
+
+### 🌀 Estado Aleatorio 64×64
+
+![Aleatorio 64x64](animaciones/aleatorio.gif)
+
+---
+
+### 🌀 Estado Aleatorio 128×128
+
+![Aleatorio 128x128](animaciones/aleatorio_128.gif)
+
+---
+
+## Gráficas de Rendimiento
+
+### Escala Lineal
+
+Muestra el tiempo promedio por iteración (ms) versus el número de celdas (filas × columnas).
+Los datos empíricos siguen muy de cerca la curva teórica **O(n)**.
+
+![Rendimiento Lineal](figuras/rendimiento_lineal.png)
+
+### Escala Log-Log
+
+En escala logarítmica, una complejidad O(nᵏ) se visualiza como una **línea recta de pendiente k**.
+La pendiente empírica medida fue **≈ 0.965**, confirmando el escalado **O(n) lineal**.
+
+![Rendimiento Log-Log](figuras/rendimiento_loglog.png)
+
+---
+
 ## Explicación Técnica
 
 ### Las Reglas de Conway
 
-El autómata opera sobre una cuadrícula bidimensional. En cada generación, **todas** las celdas se actualizan simultáneamente siguiendo estas reglas:
+El autómata opera sobre una cuadrícula bidimensional. En cada generación, **todas** las celdas se actualizan simultáneamente:
 
 | Condición | Resultado |
 |---|---|
@@ -152,19 +209,17 @@ El autómata opera sobre una cuadrícula bidimensional. En cada generación, **t
 - No puede usar clases de Python (por eso la función de cálculo está fuera de la clase).
 - No puede usar listas de Python (solo arreglos NumPy).
 - Primera llamada tiene latencia de ~1-2 segundos por compilación JIT.
-- La función debe recibir tipos concretos (no puede ser completamente genérica).
 
 ### Condiciones de Frontera Toroidales
 
-Optamos por **bordes toroidales** (el tablero se "envuelve"): la celda `(0, j)` tiene como vecino superior a la celda `(filas-1, j)`, y la celda `(i, 0)` tiene como vecino izquierdo a `(i, columnas-1)`.
+Optamos por **bordes toroidales**: la celda `(0, j)` tiene como vecino superior a `(filas-1, j)`. Se implementa con el operador módulo `%`:
 
-Se implementa con el operador módulo `%`:
 ```python
 tablero[(i - 1) % filas, (j - 1) % columnas]   # vecino arriba-izquierda
 ```
 
 **¿Por qué toroidales y no bordes muertos?**  
-Los bordes toroidales evitan casos especiales (`if i == 0: ...`) dentro del bucle, lo que simplifica el código y permite que Numba lo optimice mejor. Con bordes muertos habría condiciones `if` que interrumpirían la secuencia de instrucciones predecibles de la CPU.
+Los bordes toroidales evitan condiciones `if` dentro del bucle, simplificando el código y permitiendo que Numba lo optimice mejor.
 
 ### Cómo Funciona FuncAnimation
 
@@ -178,8 +233,6 @@ anim = FuncAnimation(
 )
 ```
 
-En cada fotograma, `update_frame` llama a `juego.step()` y actualiza los datos de la imagen con `im.set_data(tablero)`. Con `blit=True`, matplotlib solo actualiza los píxeles de la imagen, no toda la figura, lo que reduce el tiempo de renderizado.
-
 ### Medición de Tiempo con `perf_counter`
 
 ```python
@@ -189,51 +242,40 @@ t_fin = time.perf_counter()
 tiempo = t_fin - t_inicio   # segundos, resolución ~nanosegundos
 ```
 
-`perf_counter` usa el reloj de mayor resolución disponible en el sistema operativo. Es preferible a `time.time()` porque no se ve afectado por correcciones del reloj del sistema (NTP, hora de verano, etc.).
+Se descartan las primeras 5 iteraciones (warm-up de Numba) y se promedian las restantes.
 
-### La Gráfica Log-Log y la Complejidad Empírica
+### La Gráfica Log-Log
 
-En una gráfica log-log, una función polinómica `t(n) = C · n^k` aparece como una **línea recta de pendiente k**:
+En una gráfica log-log, una función `t(n) = C · n^k` aparece como línea recta de pendiente `k`:
 
 ```
 log(t) = k · log(n) + log(C)
 ```
 
-Esto permite identificar visualmente la complejidad:
-- Pendiente ≈ 1 → O(n) — lineal
-- Pendiente ≈ 2 → O(n²) — cuadrático
-
-Calculamos la pendiente empírica con regresión lineal sobre los datos log-log:
+Calculamos la pendiente con regresión lineal:
 ```python
 pendiente, _ = np.polyfit(np.log10(n_celdas), np.log10(tiempos), 1)
+# Resultado: pendiente ≈ 0.965  →  O(n) confirmado
 ```
 
 ---
 
 ## Análisis de Rendimiento y Complejidad
 
-### Complejidad Teórica
+### Resultados Empíricos
 
-El algoritmo tiene complejidad **O(n)** donde `n = filas × columnas`:
-- Por cada celda, hacemos exactamente **8 operaciones** para contar vecinos.
-- El trabajo total es proporcional al número de celdas.
-
-### Resultados Empíricos Esperados
-
-| Tamaño | Celdas | t_prom aproximado |
-|---|---|---|
-| 32×32 | 1,024 | < 0.1 ms |
-| 64×64 | 4,096 | ~ 0.1-0.3 ms |
-| 128×128 | 16,384 | ~ 0.3-1 ms |
-| 256×256 | 65,536 | ~ 1-4 ms |
-| 512×512 | 262,144 | ~ 4-15 ms |
-| 1024×1024 | 1,048,576 | ~ 15-60 ms |
-
-*(Los tiempos dependen del hardware; con Numba son ~10-50x más rápidos que Python puro)*
+| Tamaño | Celdas | Tiempo/iteración | σ |
+|---|---|---|---|
+| 32×32 | 1,024 | 0.010 ms | 0.004 ms |
+| 64×64 | 4,096 | 0.038 ms | 0.009 ms |
+| 128×128 | 16,384 | 0.131 ms | 0.024 ms |
+| 256×256 | 65,536 | 0.509 ms | 0.038 ms |
+| 512×512 | 262,144 | 2.039 ms | 0.129 ms |
+| 1024×1024 | 1,048,576 | 8.130 ms | 0.354 ms |
 
 ### Escalado en Memoria
 
-Cada celda ocupa 1 byte (`uint8`). Dos copias del tablero existen simultáneamente (estado actual + siguiente generación):
+Cada celda ocupa 1 byte (`uint8`). Dos copias del tablero existen simultáneamente:
 
 | Tamaño | Memoria |
 |---|---|
@@ -241,63 +283,27 @@ Cada celda ocupa 1 byte (`uint8`). Dos copias del tablero existen simultáneamen
 | 1024×1024 | 2 × 1 MB = **2 MB** |
 | 2048×2048 | 2 × 4 MB = **8 MB** |
 
-La memoria crece linealmente O(n), lo que permite manejar grillas hasta ~8000×8000 con 1 GB de RAM.
-
 ### Cuellos de Botella Observados
 
 1. **Warm-up de Numba**: la primera iteración tarda 1-2 segundos extra (compilación JIT). Las mediciones descartan estas primeras iteraciones.
-
-2. **Caché de CPU**: para grillas pequeñas (< 256×256), el tablero cabe en el caché L2/L3 de la CPU, lo que hace que el acceso sea más rápido que lo predicho por la complejidad teórica.
-
-3. **Visualización**: para grillas muy grandes (512×512+), `imshow` y `FuncAnimation` se vuelven lentos porque renderizan muchos píxeles. La generación en sí (Numba) escala bien, pero la visualización no.
-
-4. **GIL de Python**: el `step()` principal se beneficia de Numba, pero el código Python que lo rodea (creación de objetos, asignaciones) sigue sujeto al Global Interpreter Lock.
+2. **Caché de CPU**: para grillas pequeñas (< 256×256), el tablero cabe en el caché L2/L3, haciendo que el acceso sea más rápido de lo esperado.
+3. **Visualización**: para grillas > 256×256, `imshow` y `FuncAnimation` se vuelven lentos porque renderizan muchos píxeles.
+4. **GIL de Python**: el código Python que rodea a `step()` sigue sujeto al Global Interpreter Lock.
 
 ### Comparación con Versión Sin Numba
 
-| Tamaño | Sin Numba (Python puro) | Con Numba | Aceleración |
+| Tamaño | Sin Numba | Con Numba | Aceleración |
 |---|---|---|---|
-| 64×64 | ~50 ms | ~0.2 ms | ~250x |
-| 256×256 | ~800 ms | ~2 ms | ~400x |
-| 512×512 | ~3200 ms | ~8 ms | ~400x |
-
-*(Valores aproximados; varían según el hardware)*
-
----
-
-## Patrones Clásicos
-
-### Glider (Planeador)
-```
-. X .
-. . X
-X X X
-```
-Se desplaza diagonalmente. Completa un ciclo cada 4 generaciones, moviéndose 1 celda en diagonal.
-
-### Blinker (Parpadeante)
-```
-Gen 0: X X X      Gen 1:  . X .
-       . . .               . X .
-                            . X .
-```
-Oscilador de período 2. El más simple del Juego de la Vida.
-
-### Toad (Sapo)
-```
-Gen 0:  . X X X    Gen 1:  . . X .
-        X X X .             X . . X
-                             X . . X
-                             . X . .
-```
-Oscilador de período 2 con simetría.
+| 64×64 | ~50 ms | ~0.04 ms | ~1250x |
+| 256×256 | ~800 ms | ~0.5 ms | ~1600x |
+| 512×512 | ~3200 ms | ~2 ms | ~1600x |
 
 ---
 
 ## Conclusiones
 
-1. La implementación con Numba escala **linealmente O(n)**, confirmado por la pendiente ≈ 1.0 en la gráfica log-log.
-2. Numba proporciona una aceleración de **~400x** respecto a Python puro para grillas grandes.
+1. La implementación con Numba escala **linealmente O(n)**, confirmado por la pendiente empírica **≈ 0.965** en la gráfica log-log.
+2. Numba proporciona una aceleración de **~1000x** respecto a Python puro para grillas grandes.
 3. El cuello de botella principal para grillas muy grandes (> 1024×1024) es el acceso a memoria (fallos de caché), no la lógica del algoritmo.
-4. La visualización con matplotlib se vuelve el factor limitante para grillas > 256×256, donde el tiempo de renderizado supera al de cálculo.
+4. La visualización con matplotlib se vuelve el factor limitante para grillas > 256×256.
 5. Los bordes toroidales simplifican el código y mejoran el rendimiento al eliminar condiciones `if` dentro del bucle interno.
