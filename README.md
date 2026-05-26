@@ -3,6 +3,7 @@
 > Tarea 1 — LEAD University  
 > Curso: Programación Paralela  
 > Profesor: Johansell Villalobos Cubillo
+> Alumno: Jason Jesús Barrantes Sánchez
 
 Implementación en Python del autómata celular de Conway, con:
 - **Numba** (`@njit`) para acelerar el núcleo de cálculo.
